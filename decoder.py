@@ -232,11 +232,17 @@ class decoder_stack(nn.Module):
         self.d_model = d_model
         self.final_linear = nn.Linear(d_model, 204)
         self.final_softmax = nn.Softmax(dim = -1)
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+            print(f"GPU: {torch.cuda.get_device_name(0)} is available.")
+        else:
+            self.device = torch.device("cpu")
+            print("No GPU available, using CPU.")
 
     def forward(self, x, enc_input):
 
-        self.first_dec = First_Decoder(self.d_model, self.h, enc_input)
-        self.dec_stack = torch.nn.Sequential(*torch.nn.ModuleList([N_Decoder(self.d_model, self.h, enc_input) for i in range(self.n)]))
+        self.first_dec = First_Decoder(self.d_model, self.h, enc_input).to(self.device)
+        self.dec_stack = torch.nn.Sequential(*torch.nn.ModuleList([N_Decoder(self.d_model, self.h, enc_input).to(self.device) for i in range(self.n)]))
 
         x = self.first_dec(x)
         x = self.dec_stack(x)
