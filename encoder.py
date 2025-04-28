@@ -73,6 +73,11 @@ class First_Encoder(nn.Module):
     def __init__(self, d_model, h):
         super().__init__()
 
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        else:
+            self.device = torch.device("cpu")
+
         self.d_model = d_model
         self.h = h
         self.max_tokens = 200
@@ -83,7 +88,7 @@ class First_Encoder(nn.Module):
         pos_matrix = torch.tensor(list(range(self.max_tokens)))
         self.pos_matrix = pos_matrix.repeat(self.d_model, 1)
 
-        self.pos_embeddings = (torch.stack([self.custom(idx, x) for idx, x in enumerate(self.pos_matrix)]).T)
+        self.pos_embeddings = (torch.stack([self.custom(idx, x) for idx, x in enumerate(self.pos_matrix)]).T).to(self.device)
 
         self.MHA = MHA(d_model, h, self.max_tokens)
         # self.linear_relu_stack = nn.Sequential(

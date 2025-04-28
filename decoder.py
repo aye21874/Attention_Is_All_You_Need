@@ -56,6 +56,10 @@ class MMHA(nn.Module):
         self.d_model = d_model
         self.max_tokens = max_tokens
 
+        # create a n by n matrix
+        matrix = torch.full((self.max_tokens, self.max_tokens), -float('inf'))
+        self.mask = torch.triu(matrix, diagonal=1)
+
     def forward(self, x):
         
         q = x @ self.queries # 5 * 200 * 512  broadcasting of multiplication takes place
@@ -71,11 +75,7 @@ class MMHA(nn.Module):
         attn_scores = attn_scores / math.sqrt(self.d_model / self.h) 
 
         # add attention mask
-        # create a n by n matrix
-        matrix = torch.full((self.max_tokens, self.max_tokens), -float('inf'))
-        mask = torch.triu(matrix, diagonal=1)
-
-        attn_scores = attn_scores + mask
+        attn_scores = attn_scores + self.mask
         attn_scores = F.softmax(attn_scores, dim = 3)
 
         # print(attn_scores.shape, v.shape)   
@@ -102,6 +102,11 @@ class First_Decoder(nn.Module):
     def __init__(self, d_model, h, enc_input):
         super().__init__()
 
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        else:
+            self.device = torch.device("cpu")
+
         self.d_model = d_model
         self.h = h
         self.max_tokens = 200
@@ -112,7 +117,7 @@ class First_Decoder(nn.Module):
         pos_matrix = torch.tensor(list(range(self.max_tokens)))
         self.pos_matrix = pos_matrix.repeat(self.d_model, 1)
 
-        self.pos_embeddings = (torch.stack([self.custom(idx, x) for idx, x in enumerate(self.pos_matrix)]).T)
+        self.pos_embeddings = (torch.stack([self.custom(idx, x) for idx, x in enumerate(self.pos_matrix)]).T).to(self.device)
 
         self.MMHA = MMHA(d_model, h, self.max_tokens)  # make this into cross headed attention
         # self.linear_relu_stack = nn.Sequential(
@@ -185,7 +190,7 @@ class N_Decoder(nn.Module):
         pos_matrix = torch.tensor(list(range(self.max_tokens)))
         self.pos_matrix = pos_matrix.repeat(self.d_model, 1)
         
-        self.pos_embeddings = (torch.stack([self.custom(idx, x) for idx, x in enumerate(self.pos_matrix)]).T)
+        # self.pos_embeddings = (torch.stack([self.custom(idx, x) for idx, x in enumerate(self.pos_matrix)]).T).to(self.device)
 
         self.MMHA = MMHA(d_model, h, self.max_tokens)  # make this into cross headed attention
 
