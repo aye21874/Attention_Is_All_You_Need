@@ -31,14 +31,14 @@ class CHA(nn.Module):
 
         attn_scores = attn_scores / math.sqrt(self.d_model / self.h) 
 
-        attn_scores = F.softmax(attn_scores, dim = 3)
+        attn_scores = F.softmax(attn_scores, dim = -1)
 
         # masking operation with j > i set to 0
 
         # print(attn_scores.shape, v.shape)   
         result = attn_scores @ v.permute(0, 2, 1, 3)
 
-        result = torch.cat([torch.squeeze(ele) for ele in torch.split(result, 1, dim = 1)], dim = 2)
+        result = torch.cat([torch.squeeze(ele) for ele in torch.split(result, 1, dim = 1)], dim = -1)
 
         result = result @ self.p_mat  # broadcasting takes place
 
@@ -75,13 +75,13 @@ class MMHA(nn.Module):
         matrix = torch.full((self.max_tokens, self.max_tokens), -float('inf'))
         mask = torch.triu(matrix, diagonal=1)
 
-        attn_scores += mask
+        attn_scores = attn_scores + mask
         attn_scores = F.softmax(attn_scores, dim = 3)
 
         # print(attn_scores.shape, v.shape)   
         result = attn_scores @ v.permute(0, 2, 1, 3)
 
-        result = torch.cat([torch.squeeze(ele) for ele in torch.split(result, 1, dim = 1)], dim = 2)
+        result = torch.cat([torch.squeeze(ele) for ele in torch.split(result, 1, dim = 1)], dim = -1)
 
         result = result @ self.p_mat  # broadcasting takes place
 
@@ -111,7 +111,8 @@ class First_Decoder(nn.Module):
 
         pos_matrix = torch.tensor(list(range(self.max_tokens)))
         self.pos_matrix = pos_matrix.repeat(self.d_model, 1)
-        self.pos_embeddings = torch.stack([self.custom(idx, x) for idx, x in enumerate(self.pos_matrix)]).T
+
+        self.pos_embeddings = (torch.stack([self.custom(idx, x) for idx, x in enumerate(self.pos_matrix)]).T)
 
         self.MMHA = MMHA(d_model, h, self.max_tokens)  # make this into cross headed attention
         # self.linear_relu_stack = nn.Sequential(
@@ -140,20 +141,20 @@ class First_Decoder(nn.Module):
 
         mha_out = self.MMHA(x)  # make a masked multi headed attention
 
-        x += mha_out # adding residual connection
+        x = x + mha_out # adding residual connection
 
         x = self.layer_norm(x)
 
         # add the cross attention from the encoder layer here
         cha_out = self.CHA(x)
         
-        x += cha_out
+        x = x + cha_out
 
         x = self.layer_norm(x)
 
         relu_out = self.linear_relu_stack(x)
 
-        x += relu_out
+        x = x + relu_out
         
         x = self.layer_norm(x)
 
@@ -183,7 +184,8 @@ class N_Decoder(nn.Module):
 
         pos_matrix = torch.tensor(list(range(self.max_tokens)))
         self.pos_matrix = pos_matrix.repeat(self.d_model, 1)
-        self.pos_embeddings = torch.stack([self.custom(idx, x) for idx, x in enumerate(self.pos_matrix)]).T
+        
+        self.pos_embeddings = (torch.stack([self.custom(idx, x) for idx, x in enumerate(self.pos_matrix)]).T)
 
         self.MMHA = MMHA(d_model, h, self.max_tokens)  # make this into cross headed attention
 
@@ -201,20 +203,20 @@ class N_Decoder(nn.Module):
 
         mha_out = self.MMHA(x)  # make a masked multi headed attention
 
-        x += mha_out # adding residual connection
+        x = x + mha_out # adding residual connection
 
         x = self.layer_norm(x)
 
         # add the cross attention from the encoder layer here
         cha_out = self.CHA(x)
         
-        x += cha_out
+        x = x + cha_out
 
         x = self.layer_norm(x)
 
         relu_out = self.linear_relu_stack(x)
 
-        x += relu_out
+        x = x + relu_out
         
         x = self.layer_norm(x)
 
@@ -223,19 +225,22 @@ class N_Decoder(nn.Module):
 
 class decoder_stack(nn.Module):
 
-    def __init__(self, n, h, d_model, enc_input):
+    def __init__(self, n, h, d_model):
         super().__init__()
         self.n = n
         self.h = h
         self.d_model = d_model
-        self.enc_input = enc_input
-        self.first_dec = First_Decoder(self.d_model, self.h, self.enc_input)
-        self.dec_stack = torch.nn.Sequential(*torch.nn.ModuleList([N_Decoder(self.d_model, self.h, self.enc_input) for i in range(self.n)]))
+        self.final_linear = nn.Linear(d_model, 204)
+        self.final_softmax = nn.Softmax(dim = -1)
 
+    def forward(self, x, enc_input):
 
-    def forward(self, x):
+        self.first_dec = First_Decoder(self.d_model, self.h, enc_input)
+        self.dec_stack = torch.nn.Sequential(*torch.nn.ModuleList([N_Decoder(self.d_model, self.h, enc_input) for i in range(self.n)]))
 
         x = self.first_dec(x)
         x = self.dec_stack(x)
+        x = self.final_linear(x)
+        x = self.final_softmax(x)
 
         return x

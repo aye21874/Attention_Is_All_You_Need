@@ -48,7 +48,7 @@ class MHA(nn.Module):
         # print(attn_scores.shape, v.shape)   
         result = attn_scores @ v.permute(0, 2, 1, 3)
 
-        result = torch.cat([torch.squeeze(ele) for ele in torch.split(result, 1, dim = 1)], dim = 2)
+        result = torch.cat([torch.squeeze(ele) for ele in torch.split(result, 1, dim = 1)], dim = -1)
 
         result = result @ self.p_mat  # broadcasting takes place
 
@@ -82,7 +82,8 @@ class First_Encoder(nn.Module):
 
         pos_matrix = torch.tensor(list(range(self.max_tokens)))
         self.pos_matrix = pos_matrix.repeat(self.d_model, 1)
-        self.pos_embeddings = torch.stack([self.custom(idx, x) for idx, x in enumerate(self.pos_matrix)]).T
+
+        self.pos_embeddings = (torch.stack([self.custom(idx, x) for idx, x in enumerate(self.pos_matrix)]).T)
 
         self.MHA = MHA(d_model, h, self.max_tokens)
         # self.linear_relu_stack = nn.Sequential(
@@ -109,13 +110,13 @@ class First_Encoder(nn.Module):
 
         mha_out = self.MHA(x)
 
-        x += mha_out # adding residual connection
+        x = x + mha_out # adding residual connection
 
         x = self.layer_norm(x)
 
         relu_out = self.linear_relu_stack(x)
 
-        x += relu_out
+        x = x + relu_out
 
         x = self.layer_norm(x)
 
@@ -161,13 +162,13 @@ class N_Encoder(nn.Module):
 
         mha_out = self.MHA(x)
 
-        x += mha_out # adding residual connection
+        x = x + mha_out # adding residual connection
 
         x = self.layer_norm(x)
 
         relu_out = self.linear_relu_stack(x)
 
-        x += relu_out
+        x = x + relu_out
 
         x = self.layer_norm(x)
 
@@ -178,6 +179,7 @@ class encoder_stack(nn.Module):
 
     def __init__(self, n, h, d_model):
         super().__init__()
+
         self.n = n
         self.h = h
         self.d_model = d_model

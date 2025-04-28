@@ -26,6 +26,9 @@ def custom_filter(example):
     # removed sentences greater than 90th percentile     
     if len(example['translation']['en']) > 161:
         return False
+    
+    if len(example['translation']['hi']) > 115:
+        return False
 
     return True
 
