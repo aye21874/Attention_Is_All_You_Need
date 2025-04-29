@@ -244,10 +244,10 @@ class decoder_stack(nn.Module):
         self.final_softmax = nn.Softmax(dim = -1)
         if torch.cuda.is_available():
             self.device = torch.device("cuda")
-            print(f"GPU: {torch.cuda.get_device_name(0)} is available.")
+            # print(f"GPU: {torch.cuda.get_device_name(0)} is available.")
         else:
             self.device = torch.device("cpu")
-            print("No GPU available, using CPU.")
+            # print("No GPU available, using CPU.")
 
     def forward(self, x, enc_input):
 
