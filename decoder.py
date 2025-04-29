@@ -97,11 +97,11 @@ class First_Decoder(nn.Module):
     def custom(self, idx, x):
     
         if (idx % 2) == 0:
-            const = np.pow(10000, idx/self.d_model)
+            const = np.power(10000, idx/self.d_model)
             return torch.sin(x / const)
 
         else:
-            const = np.pow(10000, (idx - 1)/self.d_model)
+            const = np.power(10000, (idx - 1)/self.d_model)
             return torch.cos(x / const)
         
     def __init__(self, d_model, h, enc_input):
@@ -175,11 +175,11 @@ class N_Decoder(nn.Module):
     def custom(self, idx, x):
     
         if (idx % 2) == 0:
-            const = np.pow(10000, idx/self.d_model)
+            const = np.power(10000, idx/self.d_model)
             return torch.sin(x / const)
 
         else:
-            const = np.pow(10000, (idx - 1)/self.d_model)
+            const = np.power(10000, (idx - 1)/self.d_model)
             return torch.cos(x / const)
         
     def __init__(self, d_model, h, enc_input):
