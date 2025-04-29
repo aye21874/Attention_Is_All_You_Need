@@ -48,6 +48,11 @@ class MMHA(nn.Module):
     def __init__(self, d_model, h, max_tokens):
         super().__init__()
 
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        else:
+            self.device = torch.device("cpu")
+
         self.queries = nn.Parameter(torch.randn(d_model, d_model))
         self.keys = nn.Parameter(torch.randn(d_model, d_model))
         self.values = nn.Parameter(torch.randn(d_model, d_model))
@@ -58,7 +63,7 @@ class MMHA(nn.Module):
 
         # create a n by n matrix
         matrix = torch.full((self.max_tokens, self.max_tokens), -float('inf'))
-        self.mask = torch.triu(matrix, diagonal=1)
+        self.mask = torch.triu(matrix, diagonal=1).to(self.device)
 
     def forward(self, x):
         
@@ -75,7 +80,7 @@ class MMHA(nn.Module):
         attn_scores = attn_scores / math.sqrt(self.d_model / self.h) 
 
         # add attention mask
-        attn_scores = attn_scores + self.mask
+        attn_scores = attn_scores + self.mask.to(self.device)
         attn_scores = F.softmax(attn_scores, dim = 3)
 
         # print(attn_scores.shape, v.shape)   
