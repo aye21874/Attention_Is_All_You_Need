@@ -157,7 +157,7 @@ def train_loop(dataloader, model, loss_fn, optimizer):
         if batch % 10 == 0:
             loss, current = loss.item(), batch * batch_size + len(X)
             print(f"loss: {loss:>7f}, current: {current:>7f}" )
-            torch.mps.empty_cache()
+            # torch.mps.empty_cache()
 
 model = model.to(device)
 
