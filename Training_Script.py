@@ -137,29 +137,29 @@ def train_loop(dataloader, model, loss_fn, optimizer):
     batch_size = 32
     # size = 
     for batch, X in enumerate(dataloader):
-        # print(batch, X['translation']['en'][0], X['translation']['tar'][0])
+        print(batch, X['translation']['en'][0], X['translation']['tar'][0])
 
-        # optimizer.zero_grad()
+        optimizer.zero_grad()
 
-        # inputs_1 = X['translation']['en'].to(device)
-        # inputs_2 = X['translation']['hi'].to(device)
-        # model_output = model(inputs_1, inputs_2)
+        inputs_1 = X['translation']['en'].to(device)
+        inputs_2 = X['translation']['hi'].to(device)
+        model_output = model(inputs_1, inputs_2)
 
-        # target = X['translation']['tar'].reshape(-1)
-        # target = target.to(device)
+        target = X['translation']['tar'].reshape(-1)
+        target = target.to(device)
         
-        # loss = loss_fn(model_output, target)
+        loss = loss_fn(model_output, target)
         
-        # # print(loss)
-        # # print(model_output.shape)
+        # print(loss)
+        # print(model_output.shape)
 
-        # loss.backward()
-        # optimizer.step()
-        print(f'current batch{batch}')    
+        loss.backward()
+        optimizer.step()
+        # print(f'current batch{batch}')    
 
-        # if batch % 100 == 0:
-        #     loss, current = loss.item(), batch * batch_size + len(X)
-        #     print(f"loss: {loss:>7f}, current: {current:>7f}" )
+        if batch % 100 == 0:
+            loss, current = loss.item(), batch * batch_size + len(X)
+            print(f"loss: {loss:>7f}, current: {current:>7f}" )
             # torch.mps.empty_cache()
 
 model = model.to(device)
