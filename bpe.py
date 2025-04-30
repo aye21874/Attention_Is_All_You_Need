@@ -115,11 +115,12 @@ class BPE:
         while key:
 
             i = 0
-            while i + 1 < len(res):
 
-                #for cases where there are only 2 tokens to be combined
-                if len(res) < 2:
-                    break
+            #for cases where there are only 2 tokens to be combined
+            if len(res) < 2:
+                break
+            
+            while i + 1 < len(res):
                 
                 couple = res[i] + res[i + 1]
                 if couple in self.merge_rules:
