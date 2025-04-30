@@ -167,6 +167,14 @@ model = model.to(device)
 epochs = 10
 
 for t in range(epochs):
+
     print(f"Epoch {t+1}\n-------------------------------")
     train_loop(dataloader, model, loss, optimizer)
+
+    torch.save({
+            'epoch': t,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            }, f'checkpoint_{t}.pth')
+    
 print("Done!") 
