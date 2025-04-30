@@ -116,6 +116,10 @@ class BPE:
 
             i = 0
             while i + 1 < len(res):
+
+                #for cases where there are only 2 tokens to be combined
+                if len(res) < 2:
+                    break
                 
                 couple = res[i] + res[i + 1]
                 if couple in self.merge_rules:
