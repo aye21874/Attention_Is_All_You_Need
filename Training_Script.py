@@ -137,7 +137,7 @@ def train_loop(dataloader, model, loss_fn, optimizer):
     batch_size = 32
     # size = 
     for batch, X in enumerate(dataloader):
-        print(batch, X['translation']['en'][0], X['translation']['tar'][0])
+        # print(batch, X['translation']['en'][0], X['translation']['tar'][0])
 
         optimizer.zero_grad()
 
